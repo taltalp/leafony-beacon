@@ -1,21 +1,26 @@
 'use strict';
 
 const noble = require('noble');
-const knownDevices = [];
+
+const textEncoding = require('text-encoding');
+const TextDecoder = textEncoding.TextDecoder;
+
+require('date-utils');
 
 //discovered BLE device
 const discovered = (peripheral) => {
     const device = {
         name: peripheral.advertisement.localName,
         uuid: peripheral.uuid,
-        rssi: peripheral.rssi
+        rssi: peripheral.rssi,
+        data: peripheral.advertisement.manufacturerData
     };
-    knownDevices.push(device);
-    // console.log(`${knownDevices.length}:${device.name}(${device.uuid}) RSSI${device.rssi}`);
+    // console.log(`${device.name}(${device.uuid}) RSSI${device.rssi}`);
     if (device.name == 'Leaf_A') {
-        // console.log(peripheral);
-        // console.log(device.uuid);
-        console.log(peripheral.advertisement.manufacturerData);
+        let dt = new Date();
+        let dt_s = dt.toFormat('YYYY/MM/DD,HH24:MI:SS');
+        let data_s = (new TextDecoder('utf-8')).decode(device.data);
+        console.log(`${dt_s},${data_s}`);
     }
 }
 
