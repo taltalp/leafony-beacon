@@ -20,7 +20,7 @@ const discovered = (peripheral) => {
         let dt = new Date();
         let dt_s = dt.toFormat('YYYY/MM/DD,HH24:MI:SS');
         let data_s = (new TextDecoder('utf-8')).decode(device.data);
-        console.log(`${dt_s},${data_s}`);
+        console.log(`${dt_s},${data_s},${device.rssi}`);
     }
 }
 
