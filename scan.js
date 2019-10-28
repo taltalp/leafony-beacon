@@ -15,12 +15,12 @@ const discovered = (peripheral) => {
         rssi: peripheral.rssi,
         data: peripheral.advertisement.manufacturerData
     };
-    // console.log(`${device.name}(${device.uuid}) RSSI${device.rssi}`);
-    if (device.name == 'Leaf_A') {
+
+    if (String(device.name).match(/^Leaf_[A-F]$/) != null){
         let dt = new Date();
         let dt_s = dt.toFormat('YYYY/MM/DD,HH24:MI:SS');
         let data_s = (new TextDecoder('utf-8')).decode(device.data);
-        console.log(`${dt_s},${data_s},${device.rssi}`);
+        console.log(`${device.name},${dt_s},${data_s},${device.rssi}`);
     }
 }
 

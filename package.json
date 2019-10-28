@@ -4,6 +4,7 @@
   "description": "",
   "main": "scan.js",
   "dependencies": {
+    "bluetooth-hci-socket": "^0.5.1",
     "date-utils": "^1.2.21",
     "noble": "^1.9.1",
     "text-encoding": "^0.7.0"

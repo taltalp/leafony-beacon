@@ -50,7 +50,7 @@ String strDeviceName = "Leaf_A";
 //      #define DEBUG = 出力あり
 //　　//#define DEBUG = 出力なし（コメントアウトする）
 //=====================================================================
-#define DEBUG
+// #define DEBUG
 
 //=====================================================================
 // スリープ時間、起動時間、送信間隔の設定
@@ -58,6 +58,8 @@ String strDeviceName = "Leaf_A";
 //  WAKE_INTERVAL　：起動時間（スリープ復帰からスリープまでの時間）１秒単位(アドバタイズ時間）
 //=====================================================================
 // #define SLEEP_INTERVAL  (450)     // 8s x 450 = 3600s = 1h
+// #define SLEEP_INTERVAL  (225)     // 8s x 225 = 1800s = 30min
+// #define SLEEP_INTERVAL  (113)     // 8s x 113 = 904s = 15min
 #define SLEEP_INTERVAL (1) // 8s x 1 = 8s
 #define WAKE_INTERVAL (1)  // 1s
 
