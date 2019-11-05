@@ -27,6 +27,7 @@ const discovered = (peripheral) => {
 const scanStart = () => {
     noble.startScanning([], true);
     noble.on('discover', discovered);
+    console.log('Start scanning...');
 }
 
 if(noble.state === 'poweredOn'){

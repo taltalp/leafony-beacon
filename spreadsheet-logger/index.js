@@ -75,49 +75,6 @@ const getNewToken = (oAuth2Client, callback) => {
   });
 }
 
-const scanBeacon = (auth) => {
-    authenticate = auth;
-    if(noble.state === 'poweredOn'){
-        scanStart();
-    }else{
-        noble.on('stateChange', scanStart);
-    }
-}
-
-//BLE scan start
-const scanStart = () => {
-    noble.startScanning([], true);
-    noble.on('discover', discovered);
-}
-
-//discovered BLE device
-const discovered = (peripheral) => {
-    const TextDecoder = textEncoding.TextDecoder;
-    const device = {
-        name: peripheral.advertisement.localName,
-        uuid: peripheral.uuid,
-        rssi: peripheral.rssi,
-        data: peripheral.advertisement.manufacturerData
-    };
-
-    if (String(device.name).match(/^Leaf_[A-F]$/) != null){
-        let dt = new Date();
-        let dt_s = dt.toFormat('YYYY/MM/DD HH24:MI:SS');
-
-        // Decode sensors data
-        let temperature = ((device.data[0] << 8) + device.data[1]) / 256;
-        let humid = ((device.data[2] << 8) + device.data[3]) / 256;
-        let light = ((device.data[4] << 8) + device.data[5]);
-        let battery = ((device.data[6] << 8) + device.data[7]) / 256;
-
-        let values = [
-          [device.name, dt_s, temperature, humid, light, battery, device.rssi]
-        ];
-        appendData(authenticate, values);
-        console.log(values);
-    }
-}
-
 /**
  * Append values in a spreadsheet:
  * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
@@ -140,4 +97,48 @@ const appendData = (auth, values) => {
         // console.log('Appended');
     }
   });
+}
+
+const scanBeacon = (auth) => {
+    authenticate = auth;
+    if(noble.state === 'poweredOn'){
+        scanStart();
+    }else{
+        noble.on('stateChange', scanStart);
+    }
+}
+
+//BLE scan start
+const scanStart = () => {
+    noble.startScanning([], true);
+    noble.on('discover', discovered);
+    console.log('Start scanning...');
+}
+
+//discovered BLE device
+const discovered = (peripheral) => {
+    const TextDecoder = textEncoding.TextDecoder;
+    const device = {
+        name: peripheral.advertisement.localName,
+        uuid: peripheral.uuid,
+        rssi: peripheral.rssi,
+        data: peripheral.advertisement.manufacturerData
+    };
+
+    if (String(device.name).match(/^Leaf_[A-Z]$/) != null){
+        let dt = new Date();
+        let dt_s = dt.toFormat('YYYY/MM/DD HH24:MI:SS');
+
+        // Decode sensors data
+        let temperature = ((device.data[0] << 8) + device.data[1]) / 256;
+        let humid = ((device.data[2] << 8) + device.data[3]) / 256;
+        let light = ((device.data[4] << 8) + device.data[5]);
+        let battery = ((device.data[6] << 8) + device.data[7]) / 256;
+
+        let values = [
+          [device.name, dt_s, temperature, humid, light, battery, device.rssi]
+        ];
+        appendData(authenticate, values);
+        console.log(`${device.name},${dt_s}`);
+    }
 }
