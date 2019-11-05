@@ -1,6 +1,6 @@
 'use strict';
 
-const noble = require('noble');
+const noble = require('@abandonware/noble');
 const textEncoding = require('text-encoding');
 
 require('date-utils');
