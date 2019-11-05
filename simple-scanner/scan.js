@@ -15,7 +15,7 @@ const discovered = (peripheral) => {
         data: peripheral.advertisement.manufacturerData
     };
 
-    if (String(device.name).match(/^Leaf_[A-F]$/) != null){
+    if (String(device.name).match(/^Leaf_[A-Z]$/) != null){
         let dt = new Date();
         let dt_s = dt.toFormat('YYYY/MM/DD,HH24:MI:SS');
         let data_s = (new TextDecoder('utf-8')).decode(device.data);

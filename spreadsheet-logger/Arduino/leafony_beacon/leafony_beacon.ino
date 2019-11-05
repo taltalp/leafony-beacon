@@ -37,7 +37,7 @@
 // BLE Local device name
 // 長さは必ず6文字
 //=====================================================================
-String strDeviceName = "Leaf_F";
+String strDeviceName = "Leaf_A";
 
 //=====================================================================
 // SLEEP動作の有効無効切り替え
@@ -59,8 +59,8 @@ String strDeviceName = "Leaf_F";
 //=====================================================================
 // #define SLEEP_INTERVAL  (450)     // 8s x 450 = 3600s = 1h
 // #define SLEEP_INTERVAL  (225)     // 8s x 225 = 1800s = 30min
-#define SLEEP_INTERVAL  (113)     // 8s x 113 = 904s = 15min
-// #define SLEEP_INTERVAL (1) // 8s x 1 = 8s
+// #define SLEEP_INTERVAL  (113)     // 8s x 113 = 904s = 15min
+#define SLEEP_INTERVAL (1) // 8s x 1 = 8s
 #define WAKE_INTERVAL (1)  // 1s
 
 //=====================================================================
@@ -448,10 +448,11 @@ void StartAdvData()
 {
   uint8 stLen;
   float value;
-  char temp[7], battVolt[7];
+  // char temp[7], battVolt[7];
+  short int temp, humid, light, battVolt;
   char code[4];
   char sendData[15];
-  uint8 sendLen;
+  // uint8 sendLen;
 
   /* setting */
   /* [set Advertising Data]  25byte MAX*/
@@ -469,50 +470,28 @@ void StartAdvData()
       (0),                                  //10: A  6
       (0),                                  //11: field length
       (0xff),                               //12: field type (0xff)
-      (0),                                  //13: 温度 1 T 1
-      (0),                                  //14: 温度 2 X 2
-      (0),                                  //15: 温度 3 X 3
-      (0),                                  //16: 温度 4 . 4
-      (0),                                  //17: 温度 5 X 5
-      (0),                                  //18: 温度 6 X 6
-      (0),                                  //19: 電圧 S V 7
-      (0),                                  //20: 電圧 1 X 8
-      (0),                                  //21: 電圧 2 . 9
-      (0),                                  //22: 電圧 3 X 10
-      (0),                                  //23: 電圧 4 X 11
-      (0),                                  //24:
+      (0),                                  //13: Temp (Upper Byte)
+      (0),                                  //14: Temp (Lower Byte)
+      (0),                                  //15: Humid (Upper Byte)
+      (0),                                  //16: Humid (Lower Byte)
+      (0),                                  //17: Light (Upper Byte)
+      (0),                                  //18: Light (Lower Byte)
+      (0),                                  //19: Battery (Upper Byte)
+      (0),                                  //20: Battery (Lower Byte)
+      (0),                                  //21: reserved
+      (0),                                  //22: reserved
+      (0),                                  //23: reserved
+      (0),                                  //24: reserved
   };
 
   //-------------------------
-  // Temperature (5Byte)
+  // Sensors data
   //-------------------------
-  value = dataTemp;
+  temp     = (short int)(dataTemp  * 256);
+  humid    = (short int)(dataHumid * 256);
+  battVolt = (short int)(dataBatt  * 256);
+  light    = (short int)dataLight;
 
-  if (value >= 100)
-  {
-    value = 99.99;
-  }
-  else if (value <= -10)
-  {
-    value = -9.99;
-  }
-  dtostrf(value, 5, 2, temp);
-  //-------------------------
-  // Battery Voltage (4Byte)
-  //-------------------------
-  value = dataBatt;
-
-  if (value >= 10)
-  {
-    value = 9.99;
-  }
-  else if (value < 0)
-  {
-    value = 0;
-  }
-  dtostrf(value, 4, 2, battVolt);
-
-  sendLen = sprintf(sendData, "T%sV%s", temp, battVolt);
 
   /*  */
   size_t lenStr2 = strDeviceName.length();
@@ -525,18 +504,18 @@ void StartAdvData()
     adv_data[5 + u8Index] = strDeviceName.charAt(u8Index);
   }
   adv_data[5 + u8Index] = 12;
-  adv_data[5 + u8Index + 1] = 0xFF;
-  adv_data[5 + u8Index + 2] = sendData[0];
-  adv_data[5 + u8Index + 3] = sendData[1];
-  adv_data[5 + u8Index + 4] = sendData[2];
-  adv_data[5 + u8Index + 5] = sendData[3];
-  adv_data[5 + u8Index + 6] = sendData[4];
-  adv_data[5 + u8Index + 7] = sendData[5];
-  adv_data[5 + u8Index + 8] = sendData[6];
-  adv_data[5 + u8Index + 9] = sendData[7];
-  adv_data[5 + u8Index + 10] = sendData[8];
-  adv_data[5 + u8Index + 11] = sendData[9];
-  adv_data[5 + u8Index + 12] = sendData[10];
+  adv_data[5 + u8Index + 1] = 0xFF; // field type
+  adv_data[5 + u8Index + 2] = (temp >> 8) & 0xFF;
+  adv_data[5 + u8Index + 3] = temp & 0xFF;
+  adv_data[5 + u8Index + 4] = (humid >> 8) & 0xFF;
+  adv_data[5 + u8Index + 5] = humid & 0xFF;
+  adv_data[5 + u8Index + 6] = (light >> 8) & 0xFF;
+  adv_data[5 + u8Index + 7] = light & 0xFF;
+  adv_data[5 + u8Index + 8] = (battVolt >> 8) & 0xFF;
+  adv_data[5 + u8Index + 9] = battVolt & 0xFF;
+  adv_data[5 + u8Index + 10] = 0;
+  adv_data[5 + u8Index + 11] = 0;
+  adv_data[5 + u8Index + 12] = 0;
 
   //アドバタイズデータを登録
   stLen = (5 + lenStr2 + 13);
