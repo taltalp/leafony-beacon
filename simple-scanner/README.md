@@ -31,16 +31,10 @@ See [set up guide of Noble on Windows](https://github.com/noble/noble#windows).
 
     $ sudo apt update
     $ sudo apt upgrade
-    $ sudo apt-get install bluetooth libbluetooth-dev libudev-dev
-
-    $ node -v
-    v10.15.2
-    $ npm --version
-    5.8.0
-
+    $ sudo apt-get -y install bluetooth libbluetooth-dev libudev-dev git
     $ git clone https://github.com/Leafony/Leafony_Beacon
-    $ cd Leafony_Beacon
-    $ npm install "https://github.com/jrobeson/node-bluetooth-hci-socket/#fix-builds-for-node-10"
+    $ cd Leafony_Beacon/simple-scanner
+    $ npm install
     $ sudo node ./scan.js
 
 ## Usage 

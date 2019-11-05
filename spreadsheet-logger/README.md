@@ -11,35 +11,28 @@ Enable Google SpreadSheet API and download `credientials.json`
 
 ```
 sudo apt-get install bluetooth libbluetooth-dev libudev-dev
-git clone https://github.com/Leafony/beacon-logger-spreadsheet
-cd beacon-logger-spreadsheet
+git clone https://github.com/Leafony/leafony-beacon
+cd leafony-beacon/spreadsheet-logger
 npm install
 ```
 
 #### Raspberry Pi (Raspbian)
 
-Required node & npm versions
-
-* Node.js 10.15.2
-* npm 5.8.0
-
 ```
 sudo apt update
 sudo apt upgrade
-sudo apt install bluetooth libbluetooth-dev libudev-dev
+sudo apt install -y bluetooth libbluetooth-dev libudev-dev git
 git clone https://github.com/Leafony/leafony-beacon
 cd leafony-beacon/spreadsheet-logger
 npm install
-npm install "https://github.com/jrobeson/node-bluetooth-hci-socket/#fix-builds-for-node-10"
-sudo node .
 ```
 
 #### Fedra/ Other-RPM based
 
 ```
 sudo yum install bluez bluez-libs bluez-libs-devel
-git clone https://github.com/Leafony/beacon-logger-spreadsheet
-cd beacon-logger-spreadsheet
+git clone https://github.com/Leafony/leafony-beacon
+cd leafony-beacon/spreadsheet-logger
 npm install
 ```
 
