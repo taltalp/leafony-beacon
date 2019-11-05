@@ -76,6 +76,29 @@ const getNewToken = (oAuth2Client, callback) => {
 }
 
 /**
+ * Write column titles:
+ * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
+ */
+const writeTitles = (auth) => {
+  const sheets = google.sheets({version: 'v4', auth});
+  sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    range: sheetName + '!A1:G1',
+    valueInputOption: "USER_ENTERED",
+    resource: {
+        values: [
+          ['Device', 'Datetime', 'Temperature', 'Humidity', 'Illuminum', 'Battery', 'RSSI']
+        ],
+    },
+  }, (err, res) => {
+    if (err) {
+        console.log('The API returned an error: ' + err);
+        return;
+    }
+  });
+}
+
+/**
  * Append values in a spreadsheet:
  * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
  * @param {Array} value The list of row data
@@ -93,14 +116,14 @@ const appendData = (auth, values) => {
     if (err) {
         console.log('The API returned an error: ' + err);
         return;
-    } else {
-        // console.log('Appended');
     }
   });
 }
 
 const scanBeacon = (auth) => {
     authenticate = auth;
+    writeTitles(auth);
+
     if(noble.state === 'poweredOn'){
         scanStart();
     }else{
