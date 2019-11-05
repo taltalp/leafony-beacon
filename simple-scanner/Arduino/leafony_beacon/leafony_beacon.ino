@@ -37,7 +37,7 @@
 // BLE Local device name
 // 長さは必ず6文字
 //=====================================================================
-String strDeviceName = "Leaf_A";
+String strDeviceName = "Leaf_F";
 
 //=====================================================================
 // SLEEP動作の有効無効切り替え
@@ -59,8 +59,8 @@ String strDeviceName = "Leaf_A";
 //=====================================================================
 // #define SLEEP_INTERVAL  (450)     // 8s x 450 = 3600s = 1h
 // #define SLEEP_INTERVAL  (225)     // 8s x 225 = 1800s = 30min
-// #define SLEEP_INTERVAL  (113)     // 8s x 113 = 904s = 15min
-#define SLEEP_INTERVAL (1) // 8s x 1 = 8s
+#define SLEEP_INTERVAL  (113)     // 8s x 113 = 904s = 15min
+// #define SLEEP_INTERVAL (1) // 8s x 1 = 8s
 #define WAKE_INTERVAL (1)  // 1s
 
 //=====================================================================

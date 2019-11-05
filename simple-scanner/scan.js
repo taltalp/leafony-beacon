@@ -1,14 +1,13 @@
 'use strict';
 
 const noble = require('noble');
-
 const textEncoding = require('text-encoding');
-const TextDecoder = textEncoding.TextDecoder;
 
 require('date-utils');
 
 //discovered BLE device
 const discovered = (peripheral) => {
+    const TextDecoder = textEncoding.TextDecoder;
     const device = {
         name: peripheral.advertisement.localName,
         uuid: peripheral.uuid,
