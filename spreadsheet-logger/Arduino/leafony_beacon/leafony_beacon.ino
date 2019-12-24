@@ -26,12 +26,13 @@
 #include <avr/power.h>
 
 #include <Wire.h>
-#include <Adafruit_LIS3DH.h>
+//#include <Adafruit_LIS3DH.h>
 #include <Adafruit_Sensor.h>
-#include <HTS221.h>
-#include <ClosedCube_OPT3001.h>
+//#include <HTS221.h>
+//#include <ClosedCube_OPT3001.h>
 #include "TBGLib.h"
 #include <SoftwareSerial.h>
+#include "Adafruit_BME680.h"
 
 //=====================================================================
 // BLE Local device name
@@ -50,7 +51,7 @@ String strDeviceName = "Leaf_A";
 //      #define DEBUG = 出力あり
 //　　//#define DEBUG = 出力なし（コメントアウトする）
 //=====================================================================
-// #define DEBUG
+//#define DEBUG
 
 //=====================================================================
 // スリープ時間、起動時間、送信間隔の設定
@@ -127,11 +128,20 @@ String strDeviceName = "Leaf_A";
 //
 //=====================================================================
 //-----------------------------------------------
-//３軸センサ、輝度センサ I2Cアドレス
+// ３軸センサ、輝度センサ I2Cアドレス
 //-----------------------------------------------
 #define LIS2DH_ADDRESS 0x19  // SD0/SA0 pin = VCC
 #define OPT3001_ADDRESS 0x45 // ADDR pin = VCC
 #define I2C_EXPANDER_ADDR_LCD 0x1A
+
+//-----------------------------------------------
+// BME680
+//-----------------------------------------------
+#define BME_SCK 13
+#define BME_MISO 12
+#define BME_MOSI 11
+#define BME_CS 10
+#define SEALEVELPRESSURE_HPA (1013.25)
 
 //-----------------------------------------------
 // loop() interval
@@ -160,8 +170,9 @@ String strDeviceName = "Leaf_A";
 //-----------------------------------------------
 // Sensor
 //-----------------------------------------------
-Adafruit_LIS3DH accel = Adafruit_LIS3DH();
-ClosedCube_OPT3001 light;
+//Adafruit_LIS3DH accel = Adafruit_LIS3DH();
+//ClosedCube_OPT3001 light;
+Adafruit_BME680 bme; // I2C
 
 //-----------------------------------------------
 // BLE
@@ -196,19 +207,28 @@ volatile bool bInterval = false;
 //---------------------------
 // LIS2DH : accelerometer
 //---------------------------
-float dataX_g, dataY_g, dataZ_g;
-float dataTilt = 0;
+//float dataX_g, dataY_g, dataZ_g;
+//float dataTilt = 0;
 
 //---------------------------
 // HTS221 : Temperature/Humidity
 //---------------------------
-float dataTemp = 0;
-float dataHumid = 0;
+//float dataTemp = 0;
+//float dataHumid = 0;
 
 //---------------------------
 // OPT3001 : Light
 //---------------------------
-float dataLight = 0;
+//float dataLight = 0;
+
+//---------------------------
+// BME680
+//---------------------------
+float dataTemp = 0;
+float dataHumid = 0;
+float dataPress = 0;
+float dataGas = 0;
+float dataAlt = 0;
 
 //---------------------------
 // BLE
@@ -371,35 +391,45 @@ void setupSensor()
   //-------------------------------------
   // LIS2DH (accelerometer)
   //-------------------------------------
-  accel.begin(LIS2DH_ADDRESS);
-  accel.writeRegister8(LIS3DH_REG_CTRL1, 0x07); // X,Y,Z axis = enable
-  accel.setDataRate(LIS3DH_DATARATE_1_HZ);      // Data rate = 1Hz
-  accel.writeRegister8(LIS3DH_REG_CTRL2, 0x00); // INT Disable
-  accel.writeRegister8(LIS3DH_REG_CTRL4, 0x80); // BUD = enable, Scale = +/-2g
+//  accel.begin(LIS2DH_ADDRESS);
+//  accel.writeRegister8(LIS3DH_REG_CTRL1, 0x07); // X,Y,Z axis = enable
+//  accel.setDataRate(LIS3DH_DATARATE_1_HZ);      // Data rate = 1Hz
+//  accel.writeRegister8(LIS3DH_REG_CTRL2, 0x00); // INT Disable
+//  accel.writeRegister8(LIS3DH_REG_CTRL4, 0x80); // BUD = enable, Scale = +/-2g
 
   //-------------------------------------
   // HTS221 (temperature /humidity)
   //-------------------------------------
-  smeHumidity.begin();
+//  smeHumidity.begin();
 
   //-------------------------------------
   // OPT3001 (light)
   //-------------------------------------
-  OPT3001_Config newConfig;
-  OPT3001_ErrorCode errorConfig;
-  light.begin(OPT3001_ADDRESS);
+//  OPT3001_Config newConfig;
+//  OPT3001_ErrorCode errorConfig;
+//  light.begin(OPT3001_ADDRESS);
+//
+//  newConfig.RangeNumber = B1100;             // automatic full scale
+//  newConfig.ConvertionTime = B1;             // convertion time = 800ms
+//  newConfig.ModeOfConversionOperation = B11; // continous conversion
+//  newConfig.Latch = B0;                      // hysteresis-style
+//
+//  errorConfig = light.writeConfig(newConfig);
+//
+//  if (errorConfig != NO_ERROR)
+//  {
+//    errorConfig = light.writeConfig(newConfig); //retry
+//  }
 
-  newConfig.RangeNumber = B1100;             // automatic full scale
-  newConfig.ConvertionTime = B1;             // convertion time = 800ms
-  newConfig.ModeOfConversionOperation = B11; // continous conversion
-  newConfig.Latch = B0;                      // hysteresis-style
-
-  errorConfig = light.writeConfig(newConfig);
-
-  if (errorConfig != NO_ERROR)
-  {
-    errorConfig = light.writeConfig(newConfig); //retry
-  }
+  //-------------------------------------
+  // BME680
+  //-------------------------------------
+  bme.begin(0x76);
+  bme.setTemperatureOversampling(BME680_OS_8X);
+  bme.setHumidityOversampling(BME680_OS_2X);
+  bme.setPressureOversampling(BME680_OS_4X);
+  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
+  bme.setGasHeater(320, 150); // 320*C for 150 ms
 }
 
 //-----------------------------------------------
@@ -449,7 +479,8 @@ void StartAdvData()
   uint8 stLen;
   float value;
   // char temp[7], battVolt[7];
-  short int temp, humid, light, battVolt;
+//  short int temp, humid, light, battVolt;
+  short int temp, humid, pressure, gas, battVolt;
   char code[4];
   char sendData[15];
   // uint8 sendLen;
@@ -474,12 +505,12 @@ void StartAdvData()
       (0),                                  //14: Temp (Lower Byte)
       (0),                                  //15: Humid (Upper Byte)
       (0),                                  //16: Humid (Lower Byte)
-      (0),                                  //17: Light (Upper Byte)
-      (0),                                  //18: Light (Lower Byte)
-      (0),                                  //19: Battery (Upper Byte)
-      (0),                                  //20: Battery (Lower Byte)
-      (0),                                  //21: reserved
-      (0),                                  //22: reserved
+      (0),                                  //17: Pressure (Upper Byte)
+      (0),                                  //18: Pressure (Lower Byte)
+      (0),                                  //19: Gas (Upper Byte)
+      (0),                                  //20: Gas (Lower Byte)
+      (0),                                  //21: Battery (Upper Byte)
+      (0),                                  //22: Battery (Lower Byte)
       (0),                                  //23: reserved
       (0),                                  //24: reserved
   };
@@ -489,8 +520,10 @@ void StartAdvData()
   //-------------------------
   temp     = (short int)(dataTemp  * 256);
   humid    = (short int)(dataHumid * 256);
+  pressure = (short int)(dataPress * 256);
+  gas      = (short int)(dataGas   * 256);
   battVolt = (short int)(dataBatt  * 256);
-  light    = (short int)dataLight;
+//  light    = (short int)dataLight;
 
 
   /*  */
@@ -509,12 +542,12 @@ void StartAdvData()
   adv_data[5 + u8Index + 3] = temp & 0xFF;
   adv_data[5 + u8Index + 4] = (humid >> 8) & 0xFF;
   adv_data[5 + u8Index + 5] = humid & 0xFF;
-  adv_data[5 + u8Index + 6] = (light >> 8) & 0xFF;
-  adv_data[5 + u8Index + 7] = light & 0xFF;
-  adv_data[5 + u8Index + 8] = (battVolt >> 8) & 0xFF;
-  adv_data[5 + u8Index + 9] = battVolt & 0xFF;
-  adv_data[5 + u8Index + 10] = 0;
-  adv_data[5 + u8Index + 11] = 0;
+  adv_data[5 + u8Index + 6] = (pressure >> 8) & 0xFF;
+  adv_data[5 + u8Index + 7] = pressure & 0xFF;
+  adv_data[5 + u8Index + 8] = (gas >> 8) & 0xFF;
+  adv_data[5 + u8Index + 9] = gas & 0xFF;
+  adv_data[5 + u8Index + 10] = (battVolt >> 8) & 0xFF;
+  adv_data[5 + u8Index + 11] = battVolt & 0xFF;
   adv_data[5 + u8Index + 12] = 0;
 
   //アドバタイズデータを登録
@@ -631,43 +664,53 @@ void loopCounter()
 void getSensor()
 {
   double temp_mv;
-  //-------------------------
-  // LIS2DH
-  // 3軸センサーのデータ取得
-  //-------------------------
-  accel.read();
-  dataX_g = accel.x_g; //X軸
-  dataY_g = accel.y_g; //Y軸
-  dataZ_g = accel.z_g; //Z軸
+//  //-------------------------
+//  // LIS2DH
+//  // 3軸センサーのデータ取得
+//  //-------------------------
+//  accel.read();
+//  dataX_g = accel.x_g; //X軸
+//  dataY_g = accel.y_g; //Y軸
+//  dataZ_g = accel.z_g; //Z軸
+//
+//  if (dataZ_g >= 1.0)
+//  {
+//    dataZ_g = 1.00;
+//  }
+//  else if (dataZ_g <= -1.0)
+//  {
+//    dataZ_g = -1.00;
+//  }
+//
+//  dataTilt = acos(dataZ_g) / PI * 180;
+//
+//  //-------------------------
+//  // HTS221
+//  // 温湿度センサーデータ取得
+//  //-------------------------
+//  dataTemp = (float)smeHumidity.readTemperature(); //温度
+//  dataHumid = (float)smeHumidity.readHumidity();   //湿度
+//
+//  //-------------------------
+//  // OPT3001
+//  // 照度センサーデータ取得
+//  //-------------------------
+//  OPT3001 result = light.readResult();
+//
+//  if (result.error == NO_ERROR)
+//  {
+//    dataLight = result.lux;
+//  }
 
-  if (dataZ_g >= 1.0)
-  {
-    dataZ_g = 1.00;
-  }
-  else if (dataZ_g <= -1.0)
-  {
-    dataZ_g = -1.00;
-  }
-
-  dataTilt = acos(dataZ_g) / PI * 180;
-
   //-------------------------
-  // HTS221
-  // 温湿度センサーデータ取得
+  // BME680
   //-------------------------
-  dataTemp = (float)smeHumidity.readTemperature(); //温度
-  dataHumid = (float)smeHumidity.readHumidity();   //湿度
-
-  //-------------------------
-  // OPT3001
-  // 照度センサーデータ取得
-  //-------------------------
-  OPT3001 result = light.readResult();
-
-  if (result.error == NO_ERROR)
-  {
-    dataLight = result.lux;
-  }
+  bme.performReading();
+  dataTemp = (float)bme.temperature;
+  dataHumid = (float)bme.humidity;
+  dataPress = (float)(bme.pressure / 100.0);
+  dataGas = (float)(bme.gas_resistance / 1000.0);
+  dataAlt = (float)(bme.readAltitude(SEALEVELPRESSURE_HPA));
 
   //-------------------------
   // ADC081C027（ADC)
@@ -693,14 +736,19 @@ void getSensor()
   temp_mv = ((double)((adcVal1 << 4) | (adcVal2 >> 4)) * 3300 * 2) / 256;
   dataBatt = (float)(temp_mv / 1000);
 
+
+
 #ifdef DEBUG
   Serial.println("");
   Serial.println("--- sensor data ---");
   Serial.println("  Tmp[degC]     = " + String(dataTemp));
   Serial.println("  Hum[%]        = " + String(dataHumid));
-  Serial.println("  Lum[lx]       = " + String(dataLight));
-  Serial.println("  Accel X,Y,Z   = " + String(dataX_g) + " " + String(dataY_g) + " " + String(dataZ_g));
-  Serial.println("  Ang[arc deg]  = " + String(dataTilt));
+//  Serial.println("  Lum[lx]       = " + String(dataLight));
+//  Serial.println("  Accel X,Y,Z   = " + String(dataX_g) + " " + String(dataY_g) + " " + String(dataZ_g));
+//  Serial.println("  Ang[arc deg]  = " + String(dataTilt));
+  Serial.println("  Pressure[hPa] = " + String(dataPress));
+  Serial.println("  Gas[kOhm]     = " + String(dataGas));
+  Serial.println("  Altitude[m]   = " + String(dataAlt));
   Serial.println("  Bat[V]        = " + String(dataBatt));
   Serial.println("");
 #endif
@@ -838,26 +886,26 @@ void sleepSensor()
   //-----------------------
   // OPT3001 sleep
   //-----------------------
-  OPT3001_Config newConfig;
-  OPT3001_ErrorCode errorConfig;
-
-  newConfig.ModeOfConversionOperation = B00;
-  errorConfig = light.writeConfig(newConfig);
-  if (errorConfig != NO_ERROR)
-  {
-
-    errorConfig = light.writeConfig(newConfig);
-  }
-
-  //-----------------------
-  // LIS2DH sleep
-  //-----------------------
-  accel.setDataRate(LIS3DH_DATARATE_POWERDOWN);
-
-  //-----------------------
-  // HTS221 sleep
-  //-----------------------
-  smeHumidity.deactivate();
+//  OPT3001_Config newConfig;
+//  OPT3001_ErrorCode errorConfig;
+//
+//  newConfig.ModeOfConversionOperation = B00;
+//  errorConfig = light.writeConfig(newConfig);
+//  if (errorConfig != NO_ERROR)
+//  {
+//
+//    errorConfig = light.writeConfig(newConfig);
+//  }
+//
+//  //-----------------------
+//  // LIS2DH sleep
+//  //-----------------------
+//  accel.setDataRate(LIS3DH_DATARATE_POWERDOWN);
+//
+//  //-----------------------
+//  // HTS221 sleep
+//  //-----------------------
+//  smeHumidity.deactivate();
 }
 
 //-----------------------------------------
@@ -866,33 +914,33 @@ void sleepSensor()
 //-----------------------------------------
 void wakeupSensor()
 {
-  //-----------------------
-  // OPT3001 wakeup
-  //-----------------------
-  OPT3001_Config newConfig;
-  OPT3001_ErrorCode errorConfig;
-
-  newConfig.RangeNumber = B1100;             //automatic full scale
-  newConfig.ConvertionTime = B1;             //convertion time = 800ms
-  newConfig.ModeOfConversionOperation = B11; //continous conversion
-  newConfig.Latch = B1;                      //latch window style
-
-  errorConfig = light.writeConfig(newConfig);
-  if (errorConfig != NO_ERROR)
-  {
-
-    errorConfig = light.writeConfig(newConfig); //retry
-  }
-
-  //-----------------------
-  // LIS2DH wakeup
-  //-----------------------
-  accel.setDataRate(LIS3DH_DATARATE_1_HZ);
-
-  //-----------------------
-  // HTS221 wakeup
-  //-----------------------
-  smeHumidity.activate();
+//  //-----------------------
+//  // OPT3001 wakeup
+//  //-----------------------
+//  OPT3001_Config newConfig;
+//  OPT3001_ErrorCode errorConfig;
+//
+//  newConfig.RangeNumber = B1100;             //automatic full scale
+//  newConfig.ConvertionTime = B1;             //convertion time = 800ms
+//  newConfig.ModeOfConversionOperation = B11; //continous conversion
+//  newConfig.Latch = B1;                      //latch window style
+//
+//  errorConfig = light.writeConfig(newConfig);
+//  if (errorConfig != NO_ERROR)
+//  {
+//
+//    errorConfig = light.writeConfig(newConfig); //retry
+//  }
+//
+//  //-----------------------
+//  // LIS2DH wakeup
+//  //-----------------------
+//  accel.setDataRate(LIS3DH_DATARATE_1_HZ);
+//
+//  //-----------------------
+//  // HTS221 wakeup
+//  //-----------------------
+//  smeHumidity.activate();
 }
 
 //---------------------------------------
