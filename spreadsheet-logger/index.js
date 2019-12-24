@@ -87,7 +87,7 @@ const writeTitles = (auth) => {
     valueInputOption: "USER_ENTERED",
     resource: {
         values: [
-          ['Device', 'Datetime', 'Temperature', 'Humidity', 'Illuminum', 'Battery', 'RSSI']
+          ['Device', 'Datetime', 'Temperature [℃]', 'Humidity [%]', 'Pressure [hPa]', 'Gas [kOhm]', 'battery [V]', 'RSSI [dBm]']
         ],
     },
   }, (err, res) => {
@@ -155,11 +155,12 @@ const discovered = (peripheral) => {
         // Decode sensors data
         let temperature = ((device.data[0] << 8) + device.data[1]) / 256;
         let humid = ((device.data[2] << 8) + device.data[3]) / 256;
-        let light = ((device.data[4] << 8) + device.data[5]);
-        let battery = ((device.data[6] << 8) + device.data[7]) / 256;
+        let pressure = ((device.data[4] << 8) + device.data[5]);
+        let gas = ((device.data[6] << 8) + device.data[7]) / 256;
+        let battery = ((device.data[8] << 8) + device.data[9]) / 256;
 
         let values = [
-          [device.name, dt_s, temperature, humid, light, battery, device.rssi]
+          [device.name, dt_s, temperature, humid, pressure, gas, battery, device.rssi]
         ];
         appendData(authenticate, values);
         console.log(`${device.name},${dt_s}`);

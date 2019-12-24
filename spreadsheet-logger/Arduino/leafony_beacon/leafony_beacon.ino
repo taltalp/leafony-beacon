@@ -480,7 +480,7 @@ void StartAdvData()
   float value;
   // char temp[7], battVolt[7];
 //  short int temp, humid, light, battVolt;
-  short int temp, humid, pressure, gas, battVolt;
+  short int temp, humid, pressure, gas, altitude, battVolt;
   char code[4];
   char sendData[15];
   // uint8 sendLen;
@@ -520,8 +520,9 @@ void StartAdvData()
   //-------------------------
   temp     = (short int)(dataTemp  * 256);
   humid    = (short int)(dataHumid * 256);
-  pressure = (short int)(dataPress * 256);
+  pressure = (short int)(dataPress);
   gas      = (short int)(dataGas   * 256);
+  altitude = (short int)(dataAlt   * 256);
   battVolt = (short int)(dataBatt  * 256);
 //  light    = (short int)dataLight;
 
