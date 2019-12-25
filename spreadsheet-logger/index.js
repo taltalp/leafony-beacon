@@ -83,7 +83,7 @@ const writeTitles = (auth) => {
   const sheets = google.sheets({version: 'v4', auth});
   sheets.spreadsheets.values.update({
     spreadsheetId: spreadsheetId,
-    range: sheetName + '!A1:G1',
+    range: sheetName + '!A1:H1',
     valueInputOption: "USER_ENTERED",
     resource: {
         values: [
